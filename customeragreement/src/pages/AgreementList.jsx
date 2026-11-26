@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/icons'
 import MeshCanvas from '../components/MeshCanvas'
 import ValueHelp from '../components/ValueHelp'
-import Dialog from '../components/Dialog'
+import HistoryPopover from '../components/HistoryPopover'
 import { ActiveTag, BrandSlash, StatusPill } from '../components/StatusBits'
-import { HistoryList } from '../components/HistoryBits'
 import { PENDING_STATUSES, formatDate, isActive } from '../data/agreementFields'
 import { today } from '../services/agreementService'
 
@@ -54,7 +53,7 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
         FILTER_FIELDS.every((f) => {
           const q = (applied[f.key] || '').trim().toLowerCase()
           if (!q) return true
-          const v = f.date ? formatDate(a[f.key]) : String(a[f.key] || '')
+          const v = String(a[f.key] || '')
           return v.toLowerCase().includes(q)
         }),
       ),
@@ -123,21 +122,23 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
                   <div className="filter-input">
                     <input
                       id={`flt-${key}`}
-                      type="text"
+                      type={date ? 'date' : 'text'}
                       value={draft[key]}
                       autoComplete="off"
                       onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') go()
-                        if (e.key === 'F4' && kind === 'f4') {
+                        if (e.key === 'F4' && (kind === 'f4' || date)) {
                           e.preventDefault()
-                          setHelpFor(key)
+                          if (date) e.currentTarget.showPicker?.()
+                          else setHelpFor(key)
                         }
                       }}
-                      placeholder={date ? 'All (dd.mm.yyyy)' : 'All'}
+                      placeholder={date ? undefined : 'All'}
                     />
                     {draft[key] && (
                       <button
+                        type="button"
                         className="fi-clear"
                         onClick={() => setDraft({ ...draft, [key]: '' })}
                         aria-label={`Clear ${label}`}
@@ -146,14 +147,23 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
                         <Icon name="x" size={12} stroke={2.4} />
                       </button>
                     )}
-                    {kind === 'f4' && (
+                    {(kind === 'f4' || date) && (
                       <button
+                        type="button"
                         className="f4-btn"
-                        onClick={() => setHelpFor(key)}
-                        aria-label={`Value help for ${label}`}
-                        title="Value help (F4)"
+                        onClick={() => {
+                          if (date) {
+                            const el = document.getElementById(`flt-${key}`)
+                            el?.focus()
+                            el?.showPicker?.()
+                          } else {
+                            setHelpFor(key)
+                          }
+                        }}
+                        aria-label={date ? `Open calendar for ${label}` : `Value help for ${label}`}
+                        title={date ? 'Select date' : 'Value help (F4)'}
                       >
-                        <Icon name="valueHelp" size={16} />
+                        <Icon name={date ? 'calendar' : 'valueHelp'} size={16} />
                       </button>
                     )}
                   </div>
@@ -181,16 +191,16 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
               <tr>
                 <th>Customer ID</th>
                 <th>Customer Name</th>
-                <th>Approval Status</th>
                 <th>Contract ID</th>
                 <th>Contract Type</th>
                 <th>Parent Contract</th>
+                <th>Rate Card</th>
+                <th>Active Indicator</th>
+                <th>Approval Status</th>
                 <th>Valid From</th>
                 <th>Valid To</th>
-                <th>Rate Card</th>
                 <th className="center">Edit</th>
                 <th className="center">History</th>
-                <th>Active Indicator</th>
               </tr>
             </thead>
             <tbody key={runKey}>
@@ -212,9 +222,6 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
                       <td className="cell-mono">{a.customerId || '-'}</td>
                       <td>{customerName[a.customerId] || '-'}</td>
                       <td>
-                        <StatusPill status={a.status} size="sm" />
-                      </td>
-                      <td>
                         <button
                           className="site-link"
                           onClick={() => onOpen(a.contractId, pending ? 'approve' : 'read')}
@@ -225,11 +232,17 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
                       </td>
                       <td>{a.contractType || '-'}</td>
                       <td className="cell-mono">{a.parentContract || '-'}</td>
-                      <td>{formatDate(a.validFrom) || '-'}</td>
-                      <td>{formatDate(a.validTo) || '-'}</td>
                       <td className="cell-clip" title={a.rateCard}>
                         {a.rateCard || '-'}
                       </td>
+                      <td>
+                        <ActiveTag active={isActive(a, todayIso)} />
+                      </td>
+                      <td>
+                        <StatusPill status={a.status} size="sm" />
+                      </td>
+                      <td>{formatDate(a.validFrom) || '-'}</td>
+                      <td>{formatDate(a.validTo) || '-'}</td>
                       <td className="center">
                         <button
                           className="icon-btn"
@@ -243,15 +256,16 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
                       <td className="center">
                         <button
                           className="icon-btn"
-                          onClick={() => setDialog({ kind: 'history', record: a })}
+                          onClick={(e) => {
+                            const btn = e.currentTarget.getBoundingClientRect()
+                            const box = e.currentTarget.closest('.table-scroll').getBoundingClientRect()
+                            setDialog({ kind: 'history', record: a, anchor: { btn, box } })
+                          }}
                           aria-label={`History of ${a.contractId}`}
                           title="History"
                         >
                           <Icon name="history" size={15} />
                         </button>
-                      </td>
-                      <td>
-                        <ActiveTag active={isActive(a, todayIso)} />
                       </td>
                     </tr>
                   )
@@ -298,9 +312,7 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
       )}
 
       {dialog?.kind === 'history' && (
-        <Dialog title="History" sub={dialog.record.contractId} size="sm" onClose={() => setDialog(null)}>
-          <HistoryList record={dialog.record} />
-        </Dialog>
+        <HistoryPopover record={dialog.record} anchor={dialog.anchor} onClose={() => setDialog(null)} />
       )}
     </main>
   )

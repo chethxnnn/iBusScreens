@@ -2,9 +2,8 @@ import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/icons'
 import MeshCanvas from '../components/MeshCanvas'
 import ValueHelp from '../components/ValueHelp'
-import Dialog from '../components/Dialog'
+import HistoryPopover from '../components/HistoryPopover'
 import { ActiveTag, BrandSlash, StatusPill } from '../components/StatusBits'
-import { HistoryList } from '../components/HistoryBits'
 import { PENDING_STATUSES, formatDate } from '../data/builderFields'
 
 // Filters from the sheet: Builder ID (F4), State Code (F4), Created By (F4), Created On (date, no F4)
@@ -243,7 +242,11 @@ export default function BuilderList({ agreements, builders, loading, onOpen, onC
                       <td className="center">
                         <button
                           className="icon-btn"
-                          onClick={() => setDialog({ record: a })}
+                          onClick={(e) => {
+                            const btn = e.currentTarget.getBoundingClientRect()
+                            const box = e.currentTarget.closest('.table-scroll').getBoundingClientRect()
+                            setDialog({ record: a, anchor: { btn, box } })
+                          }}
                           aria-label={`History of ${a.contractId}`}
                           title="History"
                         >
@@ -295,9 +298,7 @@ export default function BuilderList({ agreements, builders, loading, onOpen, onC
       )}
 
       {dialog && (
-        <Dialog title="History" sub={dialog.record.contractId} size="sm" onClose={() => setDialog(null)}>
-          <HistoryList record={dialog.record} />
-        </Dialog>
+        <HistoryPopover record={dialog.record} anchor={dialog.anchor} onClose={() => setDialog(null)} />
       )}
     </main>
   )
