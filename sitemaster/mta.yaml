@@ -1,49 +1,88 @@
 _schema-version: "3.3"
-ID: SiteMaster
+ID: SiteMasterV2
 version: 1.0.0
 
 modules:
-  - name: sitemaster-ui
+  - name: sitemasterv2-ui
     type: html5
     path: .
     build-parameters:
       builder: custom
       commands:
         - npm install
-        - npm run build
-      build-result: approuter/resources
+        - npm run build:cf
+      build-result: dist
       supported-platforms: []
 
-  - name: SiteMaster-content
-    type: approuter.nodejs
-    path: approuter
-    parameters:
-      memory: 256M
-      disk-quota: 512M
-
+  - name: sitemasterv2-content
+    type: com.sap.application.content
+    path: .
     requires:
-      - name: SiteMaster-Destination
-      - name: SiteMaster-Connectivity
-      - name: SiteMaster-XSUAA
-    provides:
-      - name: approuter-api
-        properties:
-          url: ${default-url}
+      - name: SiteMasterV2-html5-repo-host
+        parameters:
+          content-target: true
+    build-parameters:
+      build-result: resources
+      requires:
+        - name: sitemasterv2-ui
+          artifacts:
+            - sitemasterv2-ui.zip
+          target-path: resources/
+
+  - name: sitemasterv2-destination-content
+    type: com.sap.application.content
+    requires:
+      - name: SiteMasterV2-Destination
+        parameters:
+          content-target: true
+      - name: SiteMasterV2-html5-repo-host
+        parameters:
+          service-key:
+            name: SiteMasterV2-html5-repo-host-key
+      - name: SiteMasterV2-XSUAA
+        parameters:
+          service-key:
+            name: SiteMasterV2-XSUAA-key
+    parameters:
+      content:
+        instance:
+          existing_destinations_policy: update
+          destinations:
+            - Name: sitemasterv2_html_repo_host
+              ServiceInstanceName: SiteMasterV2-html5-repo-host
+              ServiceKeyName: SiteMasterV2-html5-repo-host-key
+              sap.cloud.service: sitemasterv2
+            - Name: sitemasterv2_uaa
+              Authentication: OAuth2UserTokenExchange
+              ServiceInstanceName: SiteMasterV2-XSUAA
+              ServiceKeyName: SiteMasterV2-XSUAA-key
+              sap.cloud.service: sitemasterv2
+    build-parameters:
+      no-source: true
 
 resources:
-  - name: SiteMaster-Destination
+  - name: SiteMasterV2-html5-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+
+  - name: SiteMasterV2-html5-repo-runtime
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-runtime
+
+  - name: SiteMasterV2-Destination
     type: org.cloudfoundry.managed-service
     parameters:
       service: destination
       service-plan: lite
+      config:
+        HTML5Runtime_enabled: true
+        version: 1.0.0
 
-  - name: SiteMaster-Connectivity
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: connectivity
-      service-plan: lite
-
-  - name: SiteMaster-XSUAA
+  - name: SiteMasterV2-XSUAA
     type: org.cloudfoundry.managed-service
     parameters:
       service: xsuaa

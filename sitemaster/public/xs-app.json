@@ -1,0 +1,9 @@
+{
+  "welcomeFile": "/index.html",
+  "authenticationMethod": "route",
+  "logout": { "logoutEndpoint": "/do/logout", "logoutPage": "/" },
+  "routes": [
+    { "source": "^/user-api(.*)", "target": "$1", "service": "sap-approuter-userapi" },
+    { "source": "^(.*)$", "target": "$1", "service": "html5-apps-repo-rt", "authenticationType": "xsuaa" }
+  ]
+}

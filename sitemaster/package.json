@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "build:cf": "npm run build && node scripts/zip-dist.mjs"
+    "build:cf": "vite build && cd dist && zip -rq sitemasterv2-ui.zip ."
   },
   "dependencies": {
     "@sap/approuter": "^23.5.0",

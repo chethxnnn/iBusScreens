@@ -1,9 +1,10 @@
 {
-  "xsappname": "sitemaster-app",
+  "xsappname": "sitemasterv2",
   "tenant-mode": "dedicated",
   "oauth2-configuration": {
     "redirect-uris": [
       "https://*.hana.ondemand.com/**",
+      "https://*.launchpad.cfapps.eu10.hana.ondemand.com",
       "http://localhost:5000/"
     ]
   },
