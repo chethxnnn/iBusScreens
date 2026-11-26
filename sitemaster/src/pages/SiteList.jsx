@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import Icon from '../components/icons'
+import MeshCanvas from '../components/MeshCanvas'
 import ValueHelp from '../components/ValueHelp'
 import HistoryPopover from '../components/HistoryPopover'
 import { BrandSlash, StatusPill } from '../components/StatusBits'
@@ -71,6 +72,7 @@ export default function SiteList({ sites, loading, onOpen, onCreate }) {
   return (
     <main className="page list-page">
       <section className="band">
+        <MeshCanvas variant="dark" className="mesh-header" />
         <BrandSlash />
         <div className="band-inner">
           <div className="band-title-row">

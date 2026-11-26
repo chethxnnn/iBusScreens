@@ -3,6 +3,7 @@ import { MANDATORY_KEYS, SECTIONS } from '../data/siteFields'
 import FieldControl from '../components/FieldControl'
 import SectionNav, { SECTION_ICONS } from '../components/SectionNav'
 import Icon from '../components/icons'
+import MeshCanvas from '../components/MeshCanvas'
 import { BrandSlash, CoverageRing, Lifecycle, StatusPill } from '../components/StatusBits'
 
 const SUMMARY_FIELDS = [
@@ -198,6 +199,7 @@ export default function SiteDetail({ site, initialMode, onBack, onSave, notify }
       {mode !== 'create' ? (
         <section className="hero">
           <div className="hero-top">
+            <MeshCanvas variant="dark" className="mesh-header" />
             <BrandSlash />
             <div className="hero-id">
               <span className="mono id-chip">{site.siteId}</span>
@@ -230,6 +232,7 @@ export default function SiteDetail({ site, initialMode, onBack, onSave, notify }
       ) : (
         <section className="hero hero-create">
           <div className="hero-top">
+            <MeshCanvas variant="dark" className="mesh-header" />
             <BrandSlash />
             <div className="hero-id">
               <span className="mono id-chip">{site.siteId}</span>

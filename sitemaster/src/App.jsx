@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import SiteList from './pages/SiteList'
 import SiteDetail from './pages/SiteDetail'
 import Icon from './components/icons'
+import MeshCanvas from './components/MeshCanvas'
 import { createSite, fetchSite, fetchSites, getNextSiteId, saveSite } from './services/siteService'
 import { createEmptySiteTemplate } from './data/siteFields'
 
@@ -79,6 +80,7 @@ export default function App() {
 
   return (
     <div className="app">
+      <MeshCanvas variant="light" className="mesh-bg" />
       <div className="route" key={route.name === 'detail' ? `d-${detail?.site.siteId}-${detail?.mode}` : 'list'}>
         {route.name === 'list' && (
           <SiteList sites={sites} loading={loading} onOpen={openSite} onCreate={openCreate} />
