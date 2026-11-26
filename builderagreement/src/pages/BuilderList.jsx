@@ -187,8 +187,8 @@ export default function BuilderList({ agreements, builders, loading, onOpen, onC
                 <th>Effective To</th>
                 <th>Status</th>
                 <th>Approval Status</th>
-                <th className="center">Edit</th>
                 <th className="center">History</th>
+                <th className="center">Edit</th>
               </tr>
             </thead>
             <tbody key={runKey}>
@@ -235,11 +235,6 @@ export default function BuilderList({ agreements, builders, loading, onOpen, onC
                         <StatusPill status={a.approvalStatus} size="sm" />
                       </td>
                       <td className="center">
-                        <button className="icon-btn" onClick={() => onOpen(a.contractId, 'edit')} aria-label={`Edit ${a.contractId}`} title="Edit">
-                          <Icon name="edit" size={15} />
-                        </button>
-                      </td>
-                      <td className="center">
                         <button
                           className="icon-btn"
                           onClick={(e) => {
@@ -251,6 +246,11 @@ export default function BuilderList({ agreements, builders, loading, onOpen, onC
                           title="History"
                         >
                           <Icon name="history" size={15} />
+                        </button>
+                      </td>
+                      <td className="center">
+                        <button className="icon-btn" onClick={() => onOpen(a.contractId, 'edit')} aria-label={`Edit ${a.contractId}`} title="Edit">
+                          <Icon name="edit" size={15} />
                         </button>
                       </td>
                     </tr>

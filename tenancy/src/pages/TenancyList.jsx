@@ -1,10 +1,9 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import Icon from '../components/icons'
 import MeshCanvas from '../components/MeshCanvas'
 import ValueHelp from '../components/ValueHelp'
-import Dialog from '../components/Dialog'
+import HistoryPopover from '../components/HistoryPopover'
 import { ActiveTag, BrandSlash, StatusPill } from '../components/StatusBits'
-import { ChangeHistoryList, HistoryList } from '../components/HistoryBits'
 import { formatDate, isActive } from '../data/tenancyFields'
 
 // Filters from the Screen Design sheet. F4 = value help, date = DATS picker.
@@ -70,6 +69,68 @@ export default function TenancyList({ tenancies, masters, loading, onOpen, onCre
   const isMobile = useIsMobile()
   const [filtersOpen, setFiltersOpen] = useState(false)
   const showFilters = !isMobile || filtersOpen
+
+  const scrollRef = useRef(null)
+  const [hScroll, setHScroll] = useState({ prev: false, next: false })
+
+  const syncScrollButtons = useCallback(() => {
+    const el = scrollRef.current
+    if (!el) return
+    const prev = el.scrollLeft > 2
+    const next = el.scrollLeft + el.clientWidth < el.scrollWidth - 2
+    setHScroll((s) => (s.prev === prev && s.next === next ? s : { prev, next }))
+  }, [])
+
+  useEffect(() => {
+    const el = scrollRef.current
+    if (!el) return
+    let raf = 0
+    const onScroll = () => {
+      if (!raf) {
+        raf = requestAnimationFrame(() => {
+          raf = 0
+          syncScrollButtons()
+        })
+      }
+    }
+    syncScrollButtons()
+    el.addEventListener('scroll', onScroll, { passive: true })
+    const ro = new ResizeObserver(syncScrollButtons)
+    ro.observe(el)
+    return () => {
+      cancelAnimationFrame(raf)
+      el.removeEventListener('scroll', onScroll)
+      ro.disconnect()
+    }
+  }, [syncScrollButtons, rows.length, loading])
+
+  const scrollCols = (dir) => {
+    const el = scrollRef.current
+    if (!el) return
+    const maxLeft = Math.max(0, el.scrollWidth - el.clientWidth)
+    const step = Math.max(220, el.clientWidth * 0.5)
+    const rawTarget = Math.max(0, Math.min(maxLeft, el.scrollLeft + dir * step))
+    const ths = [...el.querySelectorAll('thead th')]
+    let target = rawTarget
+    if (ths.length && rawTarget > 0 && rawTarget < maxLeft) {
+      let best = rawTarget
+      let bestDiff = Infinity
+      for (const th of ths) {
+        const left = th.offsetLeft
+        if (left <= maxLeft) {
+          const diff = Math.abs(left - rawTarget)
+          if (diff < bestDiff) {
+            bestDiff = diff
+            best = left
+          }
+        }
+      }
+      if ((dir > 0 && best > el.scrollLeft + 24) || (dir < 0 && best < el.scrollLeft - 24)) {
+        target = best
+      }
+    }
+    el.scrollTo({ left: target, behavior: 'smooth' })
+  }
 
   const go = () => {
     setApplied(draft)
@@ -178,7 +239,27 @@ export default function TenancyList({ tenancies, masters, loading, onOpen, onCre
       </section>
 
       <section className="table-card" aria-label="Tenancies">
-        <div className="table-scroll">
+        <button
+          type="button"
+          className={`tbl-nav tbl-nav-prev${hScroll.prev ? ' is-visible' : ''}`}
+          onClick={() => scrollCols(-1)}
+          aria-label="Scroll columns left"
+          title="Previous columns"
+          tabIndex={hScroll.prev ? 0 : -1}
+        >
+          <Icon name="chevronLeft" size={16} stroke={2.4} />
+        </button>
+        <button
+          type="button"
+          className={`tbl-nav tbl-nav-next${hScroll.next ? ' is-visible' : ''}`}
+          onClick={() => scrollCols(1)}
+          aria-label="Scroll columns right"
+          title="Next columns"
+          tabIndex={hScroll.next ? 0 : -1}
+        >
+          <Icon name="chevronRight" size={16} stroke={2.4} />
+        </button>
+        <div className="table-scroll" ref={scrollRef}>
           <table className="site-table wide-table">
             <thead>
               <tr>
@@ -189,16 +270,16 @@ export default function TenancyList({ tenancies, masters, loading, onOpen, onCre
                 <th>Current Tenancy Sequence</th>
                 <th>Sequence Effective Date</th>
                 <th>Reference Contract ID</th>
+                <th>Tenancy Status</th>
                 <th>Billable Area</th>
                 <th>Billing Frequency</th>
                 <th>Rent Applicable</th>
                 <th>Rental Basis ID</th>
                 <th>P &amp; F Applicable</th>
                 <th>P &amp; F Derivation</th>
-                <th>Tenancy Status</th>
+                <th>Active Indicator</th>
                 <th className="center">Change History</th>
                 <th className="center">History</th>
-                <th>Active Indicator</th>
                 <th className="col-action">Edit</th>
               </tr>
             </thead>
@@ -239,6 +320,9 @@ export default function TenancyList({ tenancies, masters, loading, onOpen, onCre
                     </td>
                     <td>{formatDate(t.seqEffectiveDate) || '-'}</td>
                     <td className="cell-mono">{t.contractId || '-'}</td>
+                    <td>
+                      <StatusPill status={t.status} size="sm" />
+                    </td>
                     <td className="cell-clip" title={t.billableArea}>
                       {t.billableArea || '-'}
                     </td>
@@ -252,10 +336,17 @@ export default function TenancyList({ tenancies, masters, loading, onOpen, onCre
                       {t.pfDerivation || '-'}
                     </td>
                     <td>
-                      <StatusPill status={t.status} size="sm" />
+                      <ActiveTag active={isActive(t)} />
                     </td>
                     <td className="center">
-                      <button className="link-btn" onClick={() => setDialog({ kind: 'change', record: t })}>
+                      <button
+                        className="link-btn"
+                        onClick={(e) => {
+                          const btn = e.currentTarget.getBoundingClientRect()
+                          const box = e.currentTarget.closest('.table-scroll').getBoundingClientRect()
+                          setDialog({ kind: 'change', record: t, anchor: { btn, box } })
+                        }}
+                      >
                         <Icon name="history" size={14} />
                         View ({(t.changeHistory || []).length})
                       </button>
@@ -263,15 +354,16 @@ export default function TenancyList({ tenancies, masters, loading, onOpen, onCre
                     <td className="center">
                       <button
                         className="icon-btn"
-                        onClick={() => setDialog({ kind: 'history', record: t })}
+                        onClick={(e) => {
+                          const btn = e.currentTarget.getBoundingClientRect()
+                          const box = e.currentTarget.closest('.table-scroll').getBoundingClientRect()
+                          setDialog({ kind: 'history', record: t, anchor: { btn, box } })
+                        }}
                         aria-label={`History of ${t.tenancyId}`}
                         title="History"
                       >
                         <Icon name="history" size={15} />
                       </button>
-                    </td>
-                    <td>
-                      <ActiveTag active={isActive(t)} />
                     </td>
                     <td className="col-action">
                       <button
@@ -326,19 +418,13 @@ export default function TenancyList({ tenancies, masters, loading, onOpen, onCre
         />
       )}
 
-      {dialog?.kind === 'change' && (
-        <Dialog
-          title="Change history"
-          sub={`${dialog.record.tenancyId}: tenancy sequence and effective date`}
+      {dialog && (
+        <HistoryPopover
+          kind={dialog.kind}
+          record={dialog.record}
+          anchor={dialog.anchor}
           onClose={() => setDialog(null)}
-        >
-          <ChangeHistoryList entries={dialog.record.changeHistory} />
-        </Dialog>
-      )}
-      {dialog?.kind === 'history' && (
-        <Dialog title="History" sub={dialog.record.tenancyId} size="sm" onClose={() => setDialog(null)}>
-          <HistoryList record={dialog.record} />
-        </Dialog>
+        />
       )}
     </main>
   )

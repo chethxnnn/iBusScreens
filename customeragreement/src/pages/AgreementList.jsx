@@ -199,8 +199,8 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
                 <th>Approval Status</th>
                 <th>Valid From</th>
                 <th>Valid To</th>
-                <th className="center">Edit</th>
                 <th className="center">History</th>
+                <th className="center">Edit</th>
               </tr>
             </thead>
             <tbody key={runKey}>
@@ -246,16 +246,6 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
                       <td className="center">
                         <button
                           className="icon-btn"
-                          onClick={() => onOpen(a.contractId, 'edit')}
-                          aria-label={`Edit ${a.contractId}`}
-                          title="Edit"
-                        >
-                          <Icon name="edit" size={15} />
-                        </button>
-                      </td>
-                      <td className="center">
-                        <button
-                          className="icon-btn"
                           onClick={(e) => {
                             const btn = e.currentTarget.getBoundingClientRect()
                             const box = e.currentTarget.closest('.table-scroll').getBoundingClientRect()
@@ -265,6 +255,16 @@ export default function AgreementList({ agreements, customers, loading, onOpen, 
                           title="History"
                         >
                           <Icon name="history" size={15} />
+                        </button>
+                      </td>
+                      <td className="center">
+                        <button
+                          className="icon-btn"
+                          onClick={() => onOpen(a.contractId, 'edit')}
+                          aria-label={`Edit ${a.contractId}`}
+                          title="Edit"
+                        >
+                          <Icon name="edit" size={15} />
                         </button>
                       </td>
                     </tr>
