@@ -1,0 +1,44 @@
+{
+  "_version": "1.49.0",
+  "sap.app": {
+    "id": "CustomerAgreement",
+    "type": "application",
+    "title": "Customer Agreement",
+    "applicationVersion": {
+      "version": "1.0.0"
+    },
+    "crossNavigation": {
+      "inbounds": {
+        "display": {
+          "semanticObject": "CustomerAgreement",
+          "action": "display",
+          "title": "Customer Agreement",
+          "signature": {
+            "parameters": {},
+            "additionalParameters": "allowed"
+          }
+        }
+      }
+    }
+  },
+  "sap.cloud": {
+    "public": true,
+    "service": "customeragreement"
+  },
+  "sap.ui": {
+    "technology": "UI5",
+    "deviceTypes": {
+      "desktop": true,
+      "tablet": true,
+      "phone": true
+    }
+  },
+  "sap.ui5": {
+    "dependencies": {
+      "minUI5Version": "1.71.0",
+      "libs": {
+        "sap.ui.core": {}
+      }
+    }
+  }
+}

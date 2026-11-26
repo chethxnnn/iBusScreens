@@ -10,38 +10,77 @@ modules:
       builder: custom
       commands:
         - npm install
-        - npm run build
-      build-result: approuter/resources
+        - npm run build:cf
+      build-result: dist
       supported-platforms: []
 
-  - name: CustomerAgreement-content
-    type: approuter.nodejs
-    path: approuter
-    parameters:
-      memory: 256M
-      disk-quota: 512M
+  - name: customeragreement-content
+    type: com.sap.application.content
+    path: .
+    requires:
+      - name: CustomerAgreement-html5-repo-host
+        parameters:
+          content-target: true
+    build-parameters:
+      build-result: resources
+      requires:
+        - name: customeragreement-ui
+          artifacts:
+            - customeragreement-ui.zip
+          target-path: resources/
 
+  - name: customeragreement-destination-content
+    type: com.sap.application.content
     requires:
       - name: CustomerAgreement-Destination
-      - name: CustomerAgreement-Connectivity
+        parameters:
+          content-target: true
+      - name: CustomerAgreement-html5-repo-host
+        parameters:
+          service-key:
+            name: CustomerAgreement-html5-repo-host-key
       - name: CustomerAgreement-XSUAA
-    provides:
-      - name: approuter-api
-        properties:
-          url: ${default-url}
+        parameters:
+          service-key:
+            name: CustomerAgreement-XSUAA-key
+    parameters:
+      content:
+        instance:
+          existing_destinations_policy: update
+          destinations:
+            - Name: customeragreement_html_repo_host
+              ServiceInstanceName: CustomerAgreement-html5-repo-host
+              ServiceKeyName: CustomerAgreement-html5-repo-host-key
+              sap.cloud.service: customeragreement
+            - Name: customeragreement_uaa
+              Authentication: OAuth2UserTokenExchange
+              ServiceInstanceName: CustomerAgreement-XSUAA
+              ServiceKeyName: CustomerAgreement-XSUAA-key
+              sap.cloud.service: customeragreement
+    build-parameters:
+      no-source: true
 
 resources:
+  - name: CustomerAgreement-html5-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+
+  - name: CustomerAgreement-html5-repo-runtime
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-runtime
+
   - name: CustomerAgreement-Destination
     type: org.cloudfoundry.managed-service
     parameters:
       service: destination
       service-plan: lite
-
-  - name: CustomerAgreement-Connectivity
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: connectivity
-      service-plan: lite
+      config:
+        HTML5Runtime_enabled: true
+        version: 1.0.0
 
   - name: CustomerAgreement-XSUAA
     type: org.cloudfoundry.managed-service
