@@ -27,8 +27,8 @@ const useIsMobile = () => {
   return mobile
 }
 
-// Value shown and matched for a filter column (dates as dd.mm.yyyy)
-const cellValue = (row, f) => (f.date ? formatDate(row[f.key]) : String(row[f.key] || ''))
+// Value matched for a filter column (dates are ISO yyyy-mm-dd from <input type="date">)
+const cellValue = (row, f) => String(row[f.key] || '')
 
 const fmtArea = (v) => {
   const n = Number(v)
@@ -129,21 +129,23 @@ export default function AreaList({ areas, sites, loading, onOpen, onCreate }) {
                   <div className="filter-input">
                     <input
                       id={`flt-${key}`}
+                      type={date ? 'date' : 'text'}
                       value={draft[key]}
                       autoComplete="off"
-                      inputMode={date ? 'numeric' : undefined}
                       onChange={(e) => setDraft({ ...draft, [key]: e.target.value })}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') go()
                         if (e.key === 'F4') {
                           e.preventDefault()
-                          setHelpFor(key)
+                          if (date) e.currentTarget.showPicker?.()
+                          else setHelpFor(key)
                         }
                       }}
-                      placeholder={date ? 'All (dd.mm.yyyy)' : 'All'}
+                      placeholder={date ? undefined : 'All'}
                     />
                     {draft[key] && (
                       <button
+                        type="button"
                         className="fi-clear"
                         onClick={() => setDraft({ ...draft, [key]: '' })}
                         aria-label={`Clear ${label}`}
@@ -153,12 +155,21 @@ export default function AreaList({ areas, sites, loading, onOpen, onCreate }) {
                       </button>
                     )}
                     <button
+                      type="button"
                       className="f4-btn"
-                      onClick={() => setHelpFor(key)}
-                      aria-label={`Value help for ${label}`}
-                      title="Value help (F4)"
+                      onClick={() => {
+                        if (date) {
+                          const el = document.getElementById(`flt-${key}`)
+                          el?.focus()
+                          el?.showPicker?.()
+                        } else {
+                          setHelpFor(key)
+                        }
+                      }}
+                      aria-label={date ? `Open calendar for ${label}` : `Value help for ${label}`}
+                      title={date ? 'Select date' : 'Value help (F4)'}
                     >
-                      <Icon name="valueHelp" size={16} />
+                      <Icon name={date ? 'calendar' : 'valueHelp'} size={16} />
                     </button>
                   </div>
                 </div>

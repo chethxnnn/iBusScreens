@@ -216,6 +216,7 @@ h1, h2, h3, p { margin: 0; }
 .filter-input input::placeholder { color: var(--muted); }
 .filter-input input:hover { border-color: var(--navy-600); }
 .filter-input input:focus { outline: none; border-color: var(--navy); background: #fff; box-shadow: 0 0 0 3px rgba(0, 58, 108, 0.14); }
+.filter-input input[type='date']::-webkit-calendar-picker-indicator { display: none; }
 .f4-btn {
   position: absolute; right: 4px; width: 28px; height: 28px; border-radius: 6px;
   display: grid; place-items: center; color: var(--navy);
@@ -808,7 +809,7 @@ kbd { font-family: var(--font); font-size: var(--sapFontSmallSize); font-weight:
    Developed Area Master additions
    ===================================================================== */
 .area-table { min-width: 760px; }
-.site-table th.num, .site-table td.num { text-align: right; }
+.site-table th.num, .site-table td.num { text-align: left; }
 .ref-site { display: grid; gap: 2px; }
 .ref-id { font-family: var(--mono); font-size: var(--sapFontSize); color: var(--text); }
 
