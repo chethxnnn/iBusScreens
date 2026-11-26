@@ -10,38 +10,77 @@ modules:
       builder: custom
       commands:
         - npm install
-        - npm run build
-      build-result: approuter/resources
+        - npm run build:cf
+      build-result: dist
       supported-platforms: []
 
-  - name: TenancyMaster-content
-    type: approuter.nodejs
-    path: approuter
-    parameters:
-      memory: 256M
-      disk-quota: 512M
+  - name: tenancymaster-content
+    type: com.sap.application.content
+    path: .
+    requires:
+      - name: TenancyMaster-html5-repo-host
+        parameters:
+          content-target: true
+    build-parameters:
+      build-result: resources
+      requires:
+        - name: tenancymaster-ui
+          artifacts:
+            - tenancymaster-ui.zip
+          target-path: resources/
 
+  - name: tenancymaster-destination-content
+    type: com.sap.application.content
     requires:
       - name: TenancyMaster-Destination
-      - name: TenancyMaster-Connectivity
+        parameters:
+          content-target: true
+      - name: TenancyMaster-html5-repo-host
+        parameters:
+          service-key:
+            name: TenancyMaster-html5-repo-host-key
       - name: TenancyMaster-XSUAA
-    provides:
-      - name: approuter-api
-        properties:
-          url: ${default-url}
+        parameters:
+          service-key:
+            name: TenancyMaster-XSUAA-key
+    parameters:
+      content:
+        instance:
+          existing_destinations_policy: update
+          destinations:
+            - Name: tenancymaster_html_repo_host
+              ServiceInstanceName: TenancyMaster-html5-repo-host
+              ServiceKeyName: TenancyMaster-html5-repo-host-key
+              sap.cloud.service: tenancymaster
+            - Name: tenancymaster_uaa
+              Authentication: OAuth2UserTokenExchange
+              ServiceInstanceName: TenancyMaster-XSUAA
+              ServiceKeyName: TenancyMaster-XSUAA-key
+              sap.cloud.service: tenancymaster
+    build-parameters:
+      no-source: true
 
 resources:
+  - name: TenancyMaster-html5-repo-host
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-host
+
+  - name: TenancyMaster-html5-repo-runtime
+    type: org.cloudfoundry.managed-service
+    parameters:
+      service: html5-apps-repo
+      service-plan: app-runtime
+
   - name: TenancyMaster-Destination
     type: org.cloudfoundry.managed-service
     parameters:
       service: destination
       service-plan: lite
-
-  - name: TenancyMaster-Connectivity
-    type: org.cloudfoundry.managed-service
-    parameters:
-      service: connectivity
-      service-plan: lite
+      config:
+        HTML5Runtime_enabled: true
+        version: 1.0.0
 
   - name: TenancyMaster-XSUAA
     type: org.cloudfoundry.managed-service
