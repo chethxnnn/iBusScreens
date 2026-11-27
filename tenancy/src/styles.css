@@ -493,13 +493,13 @@ h1, h2, h3, p { margin: 0; }
 .hero-cancel:hover:not(:disabled) { background: rgba(255, 255, 255, 0.24); border-color: rgba(255, 255, 255, 0.45); }
 .hero-submit { box-shadow: 0 10px 24px -8px rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.22); }
 @media (min-width: 761px) {
-  .detail-page.mode-create { padding-top: 16px; }
-  .mode-create .topbar {
+  .detail-page.mode-create, .detail-page.mode-read:not(.has-actions) { padding-top: 16px; }
+  .mode-create .topbar, .mode-read:not(.has-actions) .topbar {
     position: fixed; top: 0; left: 0; right: 0; margin: 0; padding: 0 18px;
     opacity: 0; pointer-events: none; transform: translateY(-100%);
     transition: opacity 0.22s var(--ease), transform 0.28s var(--ease), background-color 0.2s, border-color 0.2s;
   }
-  .mode-create.is-hero-out .topbar {
+  .mode-create.is-hero-out .topbar, .mode-read:not(.has-actions).is-hero-out .topbar {
     opacity: 1; pointer-events: auto; transform: none;
     background: var(--surface); border-bottom-color: var(--line); box-shadow: 0 6px 18px -14px rgba(0, 29, 56, 0.5);
   }

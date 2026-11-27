@@ -353,6 +353,11 @@ export default function TenancyDetail({ record, masters, initialMode, onBack, on
             <MeshCanvas variant="dark" className="mesh-header" />
             <BrandSlash />
             <div className="hero-id">
+              {mode === 'read' && (
+                <button type="button" className="band-back" onClick={onBack} aria-label="Back" title="Back">
+                  <Icon name="back" size={16} stroke={2.2} />
+                </button>
+              )}
               <span className="mono id-chip">{record.tenancyId}</span>
               <StatusPill status={form.status} />
             </div>
