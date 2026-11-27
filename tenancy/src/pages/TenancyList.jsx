@@ -67,8 +67,8 @@ export default function TenancyList({ tenancies, masters, loading, onOpen, onCre
   const dirty = FILTER_FIELDS.some(({ key }) => draft[key] !== applied[key])
 
   const isMobile = useIsMobile()
-  const [filtersOpen, setFiltersOpen] = useState(false)
-  const showFilters = !isMobile || filtersOpen
+  const [filtersOpen, setFiltersOpen] = useState(() => !window.matchMedia(MOBILE_QUERY).matches)
+  const showFilters = filtersOpen
 
   const scrollRef = useRef(null)
   const [hScroll, setHScroll] = useState({ prev: false, next: false })
@@ -151,9 +151,6 @@ export default function TenancyList({ tenancies, masters, loading, onOpen, onCre
         <BrandSlash />
         <div className="band-inner">
           <div className="band-title-row">
-            <button className="band-back" onClick={() => window.history.back()} aria-label="Back" title="Back">
-              <Icon name="back" size={16} stroke={2.2} />
-            </button>
             <h1 className="band-title">Tenancy Master</h1>
           </div>
           <button className="btn btn-primary band-create" onClick={onCreate} aria-label="Create tenancy">
@@ -236,6 +233,17 @@ export default function TenancyList({ tenancies, masters, loading, onOpen, onCre
             </div>
           </div>
         </div>
+        <button
+          type="button"
+          className="filter-handle"
+          aria-expanded={showFilters}
+          aria-controls="filter-body"
+          aria-label={showFilters ? 'Collapse filters' : 'Expand filters'}
+          title={showFilters ? 'Collapse filters' : 'Expand filters'}
+          onClick={() => setFiltersOpen((o) => !o)}
+        >
+          <Icon name="chevronDown" size={14} stroke={2.4} />
+        </button>
       </section>
 
       <section className="table-card" aria-label="Tenancies">

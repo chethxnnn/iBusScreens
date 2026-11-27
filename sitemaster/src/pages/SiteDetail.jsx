@@ -27,6 +27,8 @@ export default function SiteDetail({ site, initialMode, onBack, onSave, notify }
   const [saving, setSaving] = useState(false)
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id)
   const [scrolled, setScrolled] = useState(false)
+  const [navStuck, setNavStuck] = useState(false)
+  const navRef = useRef(null)
 
   const remaining = useMemo(() => {
     const total = parseFloat(form.totalDasArea)
@@ -54,6 +56,8 @@ export default function SiteDetail({ site, initialMode, onBack, onSave, notify }
     const update = () => {
       frame = 0
       setScrolled(window.scrollY > 8)
+      const navEl = navRef.current
+      if (navEl) setNavStuck(navEl.getBoundingClientRect().top <= 61)
       if (Date.now() < navLock.current) return
       const line = Math.max(160, window.innerHeight * 0.35)
       const nearBottom =
@@ -148,7 +152,7 @@ export default function SiteDetail({ site, initialMode, onBack, onSave, notify }
   const changeCount = [...changedKeys].filter((k) => !k.endsWith('Uom') && k !== 'builderName').length
 
   return (
-    <main className={`page detail-page mode-${mode}`}>
+    <main className={`page detail-page mode-${mode}${navStuck ? ' is-nav-stuck' : ''}`}>
       <header className={`topbar${scrolled ? ' is-scrolled' : ''}`}>
         <div className="topbar-inner">
           <button className="back-link" onClick={onBack}>
@@ -162,7 +166,7 @@ export default function SiteDetail({ site, initialMode, onBack, onSave, notify }
             {mode === 'create' ? (
               <>
                 <span className="new-tag">New</span>
-                <span>Create site</span>
+                <span>Create Site</span>
               </>
             ) : (
               <>
@@ -187,9 +191,9 @@ export default function SiteDetail({ site, initialMode, onBack, onSave, notify }
                 {saving ? (
                   <span className="spinner" aria-hidden="true" />
                 ) : (
-                  <Icon name={mode === 'create' ? 'plus' : 'save'} size={15} stroke={2} />
+                  <Icon name={mode === 'create' ? 'check' : 'save'} size={15} stroke={mode === 'create' ? 2.4 : 2} />
                 )}
-                {saving ? (mode === 'create' ? 'Creating' : 'Saving') : mode === 'create' ? 'Create' : 'Save'}
+                {saving ? (mode === 'create' ? 'Submitting' : 'Saving') : mode === 'create' ? 'Submit' : 'Save'}
               </button>
             </div>
           )}
@@ -201,14 +205,68 @@ export default function SiteDetail({ site, initialMode, onBack, onSave, notify }
           <div className="hero-top">
             <MeshCanvas variant="dark" className="mesh-header" />
             <BrandSlash />
-            <div className="hero-id">
-              <span className="mono id-chip">{site.siteId}</span>
-              <StatusPill status={form.siteStatus} />
-            </div>
-            <h1 className="hero-title">{form.siteName || 'Untitled site'}</h1>
-            <p className="hero-sub">
-              {[form.addressLine, form.cityName, form.postalCode].filter(Boolean).join(', ') || 'No address yet'}
-            </p>
+            {mode === 'edit' ? (
+              <div className="hero-edit-row">
+                <div className="hero-edit-left">
+                  <div className="hero-id">
+                    <button
+                      type="button"
+                      className="band-back"
+                      onClick={onBack}
+                      aria-label="Back"
+                      title="Back"
+                    >
+                      <Icon name="back" size={16} stroke={2.2} />
+                    </button>
+                    <span className="mono id-chip">{site.siteId}</span>
+                    <StatusPill status={form.siteStatus} />
+                  </div>
+                  <h1 className="hero-title">{form.siteName || 'Untitled site'}</h1>
+                  <p className="hero-sub">
+                    {[form.addressLine, form.cityName, form.postalCode].filter(Boolean).join(', ') || 'No address yet'}
+                  </p>
+                </div>
+                <div className="hero-create-actions">
+                  {changeCount > 0 && (
+                    <span className="hero-change-count" key={changeCount}>
+                      {changeCount} unsaved {changeCount === 1 ? 'change' : 'changes'}
+                    </span>
+                  )}
+                  <button type="button" className="btn hero-cancel" onClick={onBack}>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-primary hero-submit${saving ? ' is-busy' : ''}`}
+                    onClick={save}
+                    disabled={saving}
+                  >
+                    {saving ? <span className="spinner" aria-hidden="true" /> : <Icon name="save" size={15} stroke={2} />}
+                    {saving ? 'Saving' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="hero-id">
+                  <button
+                    type="button"
+                    className="band-back"
+                    onClick={onBack}
+                    aria-label="Back"
+                    title="Back"
+                  >
+                    <Icon name="back" size={16} stroke={2.2} />
+                  </button>
+                  <span className="mono id-chip">{site.siteId}</span>
+                  <StatusPill status={form.siteStatus} />
+                </div>
+                <h1 className="hero-title">{form.siteName || 'Untitled site'}</h1>
+                <p className="hero-sub">
+                  {[form.addressLine, form.cityName, form.postalCode].filter(Boolean).join(', ') || 'No address yet'}
+                </p>
+              </>
+            )}
           </div>
           <div className="hero-body">
             <div className="hero-lifecycle">
@@ -234,16 +292,48 @@ export default function SiteDetail({ site, initialMode, onBack, onSave, notify }
           <div className="hero-top">
             <MeshCanvas variant="dark" className="mesh-header" />
             <BrandSlash />
-            <div className="hero-id">
-              <span className="mono id-chip">{site.siteId}</span>
+            <div className="hero-create-row">
+              <div className="hero-create-left">
+                <div className="hero-create-head">
+                  <button
+                    type="button"
+                    className="band-back"
+                    onClick={onBack}
+                    aria-label="Back"
+                    title="Back"
+                  >
+                    <Icon name="back" size={16} stroke={2.2} />
+                  </button>
+                  <h1 className="hero-title">Create Site</h1>
+                </div>
+                <p className="hero-sub">Fields marked with * are required. Everything else can be added later.</p>
+              </div>
+              <div className="hero-create-actions">
+                <button type="button" className="btn hero-cancel" onClick={onBack}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-primary hero-submit${saving ? ' is-busy' : ''}`}
+                  onClick={save}
+                  disabled={saving}
+                >
+                  {saving ? (
+                    <span className="spinner" aria-hidden="true" />
+                  ) : (
+                    <Icon name="check" size={15} stroke={2.4} />
+                  )}
+                  {saving ? 'Submitting' : 'Submit'}
+                </button>
+              </div>
             </div>
-            <h1 className="hero-title">New site</h1>
-            <p className="hero-sub">Fields marked with * are required. Everything else can be added later.</p>
           </div>
         </section>
       )}
 
       <SectionNav
+        navRef={navRef}
+        stuck={navStuck}
         sections={SECTIONS}
         activeId={activeSection}
         onSection={jumpToSection}

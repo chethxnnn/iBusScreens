@@ -125,13 +125,17 @@ export default function BuilderDetail({ record, builders, initialMode, onBack, o
   const [helpOpen, setHelpOpen] = useState(false)
   const [rejected, setRejected] = useState([])
   const [scrolled, setScrolled] = useState(false)
+  const [heroOut, setHeroOut] = useState(false)
 
   const builderById = useMemo(() => Object.fromEntries(builders.map((b) => [b.builderId, b])), [builders])
   const builder = builderById[form.builderId]
   const todayIso = today()
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
+    const onScroll = () => {
+      setScrolled(window.scrollY > 8)
+      setHeroOut(window.scrollY > 96)
+    }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -222,7 +226,7 @@ export default function BuilderDetail({ record, builders, initialMode, onBack, o
   ]
 
   return (
-    <main className={`page detail-page builder-detail mode-${mode}`}>
+    <main className={`page detail-page builder-detail mode-${mode}${heroOut ? ' is-hero-out' : ''}`}>
       <header className={`topbar${scrolled ? ' is-scrolled' : ''}`}>
         <div className="topbar-inner">
           <button className="back-link" onClick={onBack}>
@@ -236,7 +240,7 @@ export default function BuilderDetail({ record, builders, initialMode, onBack, o
             {mode === 'create' ? (
               <>
                 <span className="new-tag">New</span>
-                <span>Create builder agreement</span>
+                <span>Create Builder Agreement</span>
               </>
             ) : (
               <>
@@ -258,8 +262,8 @@ export default function BuilderDetail({ record, builders, initialMode, onBack, o
                 Cancel
               </button>
               <button className={`btn btn-cta${saving ? ' is-busy' : ''}`} onClick={save} disabled={saving}>
-                {saving ? <span className="spinner" aria-hidden="true" /> : <Icon name={mode === 'create' ? 'plus' : 'save'} size={15} stroke={2} />}
-                {saving ? (mode === 'create' ? 'Creating' : 'Saving') : mode === 'create' ? 'Create' : 'Save'}
+                {saving ? <span className="spinner" aria-hidden="true" /> : <Icon name={mode === 'create' ? 'check' : 'save'} size={15} stroke={mode === 'create' ? 2.4 : 2} />}
+                {saving ? (mode === 'create' ? 'Submitting' : 'Saving') : mode === 'create' ? 'Submit' : 'Save'}
               </button>
             </div>
           )}
@@ -271,16 +275,62 @@ export default function BuilderDetail({ record, builders, initialMode, onBack, o
           <div className="hero-top">
             <MeshCanvas variant="dark" className="mesh-header" />
             <BrandSlash />
-            <div className="hero-id">
-              <span className="mono id-chip">{record.contractId}</span>
-              <StatusPill status={form.approvalStatus} />
-            </div>
-            <h1 className="hero-title">{builder?.name || 'Builder agreement'}</h1>
-            <p className="hero-sub">
-              {[form.contractType, form.effectiveFrom && `${formatDate(form.effectiveFrom)} to ${formatDate(form.effectiveTo) || '-'}`]
-                .filter(Boolean)
-                .join(', ')}
-            </p>
+            {mode === 'edit' ? (
+              <div className="hero-edit-row">
+                <div className="hero-edit-left">
+                  <div className="hero-id">
+                    <button type="button" className="band-back" onClick={onBack} aria-label="Back" title="Back">
+                      <Icon name="back" size={16} stroke={2.2} />
+                    </button>
+                    <span className="mono id-chip">{record.contractId}</span>
+                    <StatusPill status={form.approvalStatus} />
+                  </div>
+                  <h1 className="hero-title">{builder?.name || 'Builder agreement'}</h1>
+                  <p className="hero-sub">
+                    {[form.contractType, form.effectiveFrom && `${formatDate(form.effectiveFrom)} to ${formatDate(form.effectiveTo) || '-'}`]
+                      .filter(Boolean)
+                      .join(', ')}
+                  </p>
+                </div>
+                <div className="hero-create-actions">
+                  {changeCount > 0 && (
+                    <span className="hero-change-count" key={changeCount}>
+                      {changeCount} unsaved {changeCount === 1 ? 'change' : 'changes'}
+                    </span>
+                  )}
+                  <button type="button" className="btn hero-cancel" onClick={onBack}>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-primary hero-submit${saving ? ' is-busy' : ''}`}
+                    onClick={save}
+                    disabled={saving}
+                  >
+                    {saving ? <span className="spinner" aria-hidden="true" /> : <Icon name="save" size={15} stroke={2} />}
+                    {saving ? 'Saving' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="hero-id">
+                  {mode === 'read' && (
+                    <button type="button" className="band-back" onClick={onBack} aria-label="Back" title="Back">
+                      <Icon name="back" size={16} stroke={2.2} />
+                    </button>
+                  )}
+                  <span className="mono id-chip">{record.contractId}</span>
+                  <StatusPill status={form.approvalStatus} />
+                </div>
+                <h1 className="hero-title">{builder?.name || 'Builder agreement'}</h1>
+                <p className="hero-sub">
+                  {[form.contractType, form.effectiveFrom && `${formatDate(form.effectiveFrom)} to ${formatDate(form.effectiveTo) || '-'}`]
+                    .filter(Boolean)
+                    .join(', ')}
+                </p>
+              </>
+            )}
           </div>
           <div className="hero-body">
             <div className="hero-lifecycle">
@@ -310,11 +360,31 @@ export default function BuilderDetail({ record, builders, initialMode, onBack, o
           <div className="hero-top">
             <MeshCanvas variant="dark" className="mesh-header" />
             <BrandSlash />
-            <div className="hero-id">
-              <span className="mono id-chip">{record.contractId}</span>
+            <div className="hero-create-row">
+              <div className="hero-create-left">
+                <div className="hero-create-head">
+                  <button type="button" className="band-back" onClick={onBack} aria-label="Back" title="Back">
+                    <Icon name="back" size={16} stroke={2.2} />
+                  </button>
+                  <h1 className="hero-title">Create Builder Agreement</h1>
+                </div>
+                <p className="hero-sub">Fields marked with * are required. Contract ID is assigned when you save.</p>
+              </div>
+              <div className="hero-create-actions">
+                <button type="button" className="btn hero-cancel" onClick={onBack}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-primary hero-submit${saving ? ' is-busy' : ''}`}
+                  onClick={save}
+                  disabled={saving}
+                >
+                  {saving ? <span className="spinner" aria-hidden="true" /> : <Icon name="check" size={15} stroke={2.4} />}
+                  {saving ? 'Submitting' : 'Submit'}
+                </button>
+              </div>
             </div>
-            <h1 className="hero-title">New builder agreement</h1>
-            <p className="hero-sub">Fields marked with * are required. Contract ID is assigned when you save.</p>
           </div>
         </section>
       )}

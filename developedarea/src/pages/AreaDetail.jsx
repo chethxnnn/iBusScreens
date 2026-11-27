@@ -253,12 +253,16 @@ export default function AreaDetail({ area, sites, initialMode, onBack, onSave, n
   const [helpOpen, setHelpOpen] = useState(false)
   const [rejected, setRejected] = useState([])
   const [scrolled, setScrolled] = useState(false)
+  const [heroOut, setHeroOut] = useState(false)
 
   const siteById = useMemo(() => Object.fromEntries(sites.map((s) => [s.siteId, s])), [sites])
   const site = siteById[form.refSiteId]
 
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 8)
+    const onScroll = () => {
+      setScrolled(window.scrollY > 8)
+      setHeroOut(window.scrollY > 96)
+    }
     window.addEventListener('scroll', onScroll, { passive: true })
     return () => window.removeEventListener('scroll', onScroll)
   }, [])
@@ -345,7 +349,7 @@ export default function AreaDetail({ area, sites, initialMode, onBack, onSave, n
   ]
 
   return (
-    <main className={`page detail-page area-detail mode-${mode}`}>
+    <main className={`page detail-page area-detail mode-${mode}${heroOut ? ' is-hero-out' : ''}`}>
       <header className={`topbar${scrolled ? ' is-scrolled' : ''}`}>
         <div className="topbar-inner">
           <button className="back-link" onClick={onBack}>
@@ -359,7 +363,7 @@ export default function AreaDetail({ area, sites, initialMode, onBack, onSave, n
             {mode === 'create' ? (
               <>
                 <span className="new-tag">New</span>
-                <span>Create developed area</span>
+                <span>Create Developed Area</span>
               </>
             ) : (
               <>
@@ -384,9 +388,9 @@ export default function AreaDetail({ area, sites, initialMode, onBack, onSave, n
                 {saving ? (
                   <span className="spinner" aria-hidden="true" />
                 ) : (
-                  <Icon name={mode === 'create' ? 'plus' : 'save'} size={15} stroke={2} />
+                  <Icon name={mode === 'create' ? 'check' : 'save'} size={15} stroke={mode === 'create' ? 2.4 : 2} />
                 )}
-                {saving ? (mode === 'create' ? 'Creating' : 'Saving') : mode === 'create' ? 'Create' : 'Save'}
+                {saving ? (mode === 'create' ? 'Submitting' : 'Saving') : mode === 'create' ? 'Submit' : 'Save'}
               </button>
             </div>
           )}
@@ -398,13 +402,51 @@ export default function AreaDetail({ area, sites, initialMode, onBack, onSave, n
           <div className="hero-top">
             <MeshCanvas variant="dark" className="mesh-header" />
             <BrandSlash />
-            <div className="hero-id">
-              <span className="mono id-chip">{area.areaId}</span>
-            </div>
-            <h1 className="hero-title">{site?.siteName || 'Developed area'}</h1>
-            <p className="hero-sub">
-              {[form.refSiteId, site?.cityName].filter(Boolean).join(', ') || 'No reference site yet'}
-            </p>
+            {mode === 'edit' ? (
+              <div className="hero-edit-row">
+                <div className="hero-edit-left">
+                  <div className="hero-id">
+                    <button type="button" className="band-back" onClick={onBack} aria-label="Back" title="Back">
+                      <Icon name="back" size={16} stroke={2.2} />
+                    </button>
+                    <span className="mono id-chip">{area.areaId}</span>
+                  </div>
+                  <h1 className="hero-title">{site?.siteName || 'Developed area'}</h1>
+                  <p className="hero-sub">
+                    {[form.refSiteId, site?.cityName].filter(Boolean).join(', ') || 'No reference site yet'}
+                  </p>
+                </div>
+                <div className="hero-create-actions">
+                  {changeCount > 0 && (
+                    <span className="hero-change-count" key={changeCount}>
+                      {changeCount} unsaved {changeCount === 1 ? 'change' : 'changes'}
+                    </span>
+                  )}
+                  <button type="button" className="btn hero-cancel" onClick={onBack}>
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    className={`btn btn-primary hero-submit${saving ? ' is-busy' : ''}`}
+                    onClick={save}
+                    disabled={saving}
+                  >
+                    {saving ? <span className="spinner" aria-hidden="true" /> : <Icon name="save" size={15} stroke={2} />}
+                    {saving ? 'Saving' : 'Save'}
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="hero-id">
+                  <span className="mono id-chip">{area.areaId}</span>
+                </div>
+                <h1 className="hero-title">{site?.siteName || 'Developed area'}</h1>
+                <p className="hero-sub">
+                  {[form.refSiteId, site?.cityName].filter(Boolean).join(', ') || 'No reference site yet'}
+                </p>
+              </>
+            )}
           </div>
           <dl className="summary-grid summary-4">
             {summary.map(([label, value]) => (
@@ -420,11 +462,31 @@ export default function AreaDetail({ area, sites, initialMode, onBack, onSave, n
           <div className="hero-top">
             <MeshCanvas variant="dark" className="mesh-header" />
             <BrandSlash />
-            <div className="hero-id">
-              <span className="mono id-chip">{area.areaId}</span>
+            <div className="hero-create-row">
+              <div className="hero-create-left">
+                <div className="hero-create-head">
+                  <button type="button" className="band-back" onClick={onBack} aria-label="Back" title="Back">
+                    <Icon name="back" size={16} stroke={2.2} />
+                  </button>
+                  <h1 className="hero-title">Create Developed Area</h1>
+                </div>
+                <p className="hero-sub">Fields marked with * are required. Area ID is generated by the system.</p>
+              </div>
+              <div className="hero-create-actions">
+                <button type="button" className="btn hero-cancel" onClick={onBack}>
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  className={`btn btn-primary hero-submit${saving ? ' is-busy' : ''}`}
+                  onClick={save}
+                  disabled={saving}
+                >
+                  {saving ? <span className="spinner" aria-hidden="true" /> : <Icon name="check" size={15} stroke={2.4} />}
+                  {saving ? 'Submitting' : 'Submit'}
+                </button>
+              </div>
             </div>
-            <h1 className="hero-title">New developed area</h1>
-            <p className="hero-sub">Fields marked with * are required. Area ID is generated by the system.</p>
           </div>
         </section>
       )}
